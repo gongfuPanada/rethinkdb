@@ -54,7 +54,12 @@ class DashboardContainer extends Backbone.View
                         Q.tables_with_replicas_not_ready(
                             table_config_id, table_status)
                     num_tables: table_config_id.count()
-                    num_servers: server_status.count()
+                    num_servers: r([
+                        A.server_status.count()
+                        A.table_config('shards')
+                            .concatMap((shard)->shard('replicas'))
+                            .concatMap((row)->row).distinct().count()
+                    ]).max()
                     num_connected_servers:
                         Q.num_connected_servers(server_status)
                     disconnected_servers:

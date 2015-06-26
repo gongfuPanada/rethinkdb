@@ -331,13 +331,12 @@ class Driver
                     ).sum()
                 ).sum()
 
-        disconnected_servers: (server_status=driver.admin().server_status) ->
-            server_status.filter((server) ->
-                server("status").ne("connected")
-            ).map((server) ->
-                time_disconnected: server('connection')('time_disconnected')
-                name: server('name')
-            ).coerceTo('array')
+        disconnected_servers: (table_config=driver.admin().table_config, \
+                               server_status=driver.admin().server_status) ->
+            table_config('shards')
+                .concatMap((x)->x('replicas'))
+                .concatMap((x)->x).coerceTo('array')
+                .setDifference(server_status('name').coerceTo('array'))
 
         num_disconnected_tables: (table_status=driver.admin().table_status) ->
             table_status.count((table) ->
@@ -351,9 +350,7 @@ class Driver
             )
 
         num_connected_servers: (server_status=driver.admin().server_status) ->
-            server_status.count((server) ->
-                server('status').eq("connected")
-            )
+            server_status.count()
 
         num_sindex_issues: (current_issues=driver.admin().current_issues) ->
             current_issues.count((issue) -> issue('type').eq('outdated_index'))
